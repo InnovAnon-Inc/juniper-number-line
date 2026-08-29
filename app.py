@@ -117,7 +117,10 @@ def render_numberline_image(modulus, num_rings):
 
 
 def render_grid_diagram(modulus, op, operand_val, ax):
-    """Renders a single modular operation diagram onto an existing Matplotlib Axis with labeled vertices."""
+    """Renders a single modular operation diagram onto an existing Matplotlib Axis with labeled vertices
+
+    and highlights vertices that are their own modular inverses (x^2 ≡ 1 mod m).
+    """
     ax.set_facecolor("#121216")
 
     r_inner = 1.0
@@ -133,13 +136,18 @@ def render_grid_diagram(modulus, op, operand_val, ax):
         linewidth=1,
     )
 
+    # Pre-calculate self-inverses: x such that (x * x) % modulus == 1
+    self_inverses = {
+        x for x in range(modulus) if (x * x) % modulus == 1
+    }
+
     # Connect trajectories
     for i in range(modulus):
         if op == "inv":
             target = calculate_modular_target(i, "inv", None, modulus)
             has_inv = get_modular_inverse(i, modulus) is not None
             if not has_inv:
-                continue  # Skip elements with no modular inverse
+                continue  # Skip non-invertible elements
         else:
             target = calculate_modular_target(i, op, operand_val, modulus)
 
@@ -160,28 +168,48 @@ def render_grid_diagram(modulus, op, operand_val, ax):
             linewidth=1.0,
         )
 
-    # Dynamic label size & radius offset based on modulus to prevent overlapping
+    # Dynamic label size & radius offset
     label_font_size = max(5, min(9, 120 // modulus))
-    r_label = 1.12
+    r_label = 1.14
 
     # Modular Vertices & Labels
     for i, angle in enumerate(angles_shifted):
         x_pt = r_inner * np.cos(angle)
         y_pt = r_inner * np.sin(angle)
-        ax.scatter(x_pt, y_pt, color="#00E5FF", s=6, zorder=3)
 
-        # Draw vertex number labels slightly outside the circle boundary
+        is_self_inv = i in self_inverses
+
+        # Vertex Dot Styling: Gold highlight for self-inverses, Cyan for others
+        dot_color = "#FFD700" if is_self_inv else "#00E5FF"
+        dot_size = 18 if is_self_inv else 6
+
+        ax.scatter(x_pt, y_pt, color=dot_color, s=dot_size, zorder=4)
+
+        # Extra visual ring around self-inverse vertices
+        if is_self_inv:
+            ax.scatter(
+                x_pt,
+                y_pt,
+                s=50,
+                facecolors="none",
+                edgecolors="#FFD700",
+                linewidths=1.2,
+                zorder=4,
+            )
+
+        # Draw vertex number labels
         x_lbl = r_label * np.cos(angle)
         y_lbl = r_label * np.sin(angle)
         ax.text(
             x_lbl,
             y_lbl,
             str(i),
-            color="#C8C8EE",
+            color="#FFD700" if is_self_inv else "#C8C8EE",
             fontsize=label_font_size,
+            fontweight="bold" if is_self_inv else "normal",
             ha="center",
             va="center",
-            zorder=4,
+            zorder=5,
         )
 
     # Title label per sub-diagram
@@ -196,8 +224,7 @@ def render_grid_diagram(modulus, op, operand_val, ax):
         f"${symbol}$ mod {modulus}", color="#E0E0FF", fontsize=10, pad=8
     )
 
-    # Expanded axis limit to give room for labels around the perimeter
-    limit = 1.35
+    limit = 1.38
     ax.set_xlim(-limit, limit)
     ax.set_ylim(-limit, limit)
     ax.set_aspect("equal")

@@ -1,23 +1,53 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Modular Operations Reference Grid</h2>
-<form class="controls" method="GET" action="/grid">
+<form class="controls" id="gridForm" onsubmit="return false;">
     <label>Modulus (n): 
-        <input type="number" name="modulus" value="{{ modulus }}" min="3" max="100">
+        <input type="number" id="modulusInput" name="modulus" value="{{ modulus }}" min="3" max="100">
     </label>
     <label>Operation: 
-        <select name="op">
+        <select id="opInput" name="op">
             <option value="mult" {% if op == 'mult' %}selected{% endif %}>Multiplication (x * n)</option>
             <option value="add" {% if op == 'add' %}selected{% endif %}>Addition (x + n)</option>
             <option value="pow" {% if op == 'pow' %}selected{% endif %}>Exponentiation (x^n)</option>
             <option value="inv" {% if op == 'inv' %}selected{% endif %}>Modular Inverse (x^-1)</option>
         </select>
     </label>
-    <button type="submit">Generate Grid</button>
     <button type="button" onclick="window.print()">Print Grid</button>
+    <span style="margin-left: auto; font-size: 0.85em; color: #FFD700;">
+        ★ Gold vertices = Self-Inverses ($x^2 \equiv 1 \pmod n$)
+    </span>
 </form>
 
 <div class="img-container">
-    <img src="/grid_img?modulus={{ modulus }}&op={{ op }}" alt="Modular Operation Grid">
+    <img id="gridImage" src="" alt="Modular Operation Grid">
 </div>
+
+<script>
+    const modulusInput = document.getElementById('modulusInput');
+    const opInput = document.getElementById('opInput');
+    const gridImage = document.getElementById('gridImage');
+
+    let debounceTimer;
+
+    function updateGridImage() {
+        const mod = modulusInput.value || 12;
+        const op = opInput.value || 'mult';
+        
+        // Append a timestamp to prevent browser image caching
+        gridImage.src = `/grid_img?modulus=${mod}&op=${op}&_t=${new Date().getTime()}`;
+    }
+
+    // Debounced update so rapid typing doesn't spam the Python server
+    function queueUpdate() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(updateGridImage, 300);
+    }
+
+    // Trigger updates on startup and on any form input/selection change
+    window.addEventListener('DOMContentLoaded', updateGridImage);
+    modulusInput.addEventListener('input', queueUpdate);
+    opInput.addEventListener('change', updateGridImage);
+</script>
 {% endblock %}
+
