@@ -117,7 +117,7 @@ def render_numberline_image(modulus, num_rings):
 
 
 def render_grid_diagram(modulus, op, operand_val, ax):
-    """Renders a single modular operation diagram onto an existing Matplotlib Axis."""
+    """Renders a single modular operation diagram onto an existing Matplotlib Axis with labeled vertices."""
     ax.set_facecolor("#121216")
 
     r_inner = 1.0
@@ -160,12 +160,31 @@ def render_grid_diagram(modulus, op, operand_val, ax):
             linewidth=1.0,
         )
 
-    # Modular Vertices
-    x_pts = r_inner * np.cos(angles_shifted)
-    y_pts = r_inner * np.sin(angles_shifted)
-    ax.scatter(x_pts, y_pts, color="#00E5FF", s=8, zorder=3)
+    # Dynamic label size & radius offset based on modulus to prevent overlapping
+    label_font_size = max(5, min(9, 120 // modulus))
+    r_label = 1.12
 
-    # Title label per sub-diagram (Fixed Matplotlib MathText formatting)
+    # Modular Vertices & Labels
+    for i, angle in enumerate(angles_shifted):
+        x_pt = r_inner * np.cos(angle)
+        y_pt = r_inner * np.sin(angle)
+        ax.scatter(x_pt, y_pt, color="#00E5FF", s=6, zorder=3)
+
+        # Draw vertex number labels slightly outside the circle boundary
+        x_lbl = r_label * np.cos(angle)
+        y_lbl = r_label * np.sin(angle)
+        ax.text(
+            x_lbl,
+            y_lbl,
+            str(i),
+            color="#C8C8EE",
+            fontsize=label_font_size,
+            ha="center",
+            va="center",
+            zorder=4,
+        )
+
+    # Title label per sub-diagram
     op_symbols = {
         "mult": f"x \\times {operand_val}",
         "add": f"x + {operand_val}",
@@ -174,10 +193,11 @@ def render_grid_diagram(modulus, op, operand_val, ax):
     }
     symbol = op_symbols.get(op, "f(x)")
     ax.set_title(
-        f"${symbol}$ mod {modulus}", color="#E0E0FF", fontsize=10, pad=6
+        f"${symbol}$ mod {modulus}", color="#E0E0FF", fontsize=10, pad=8
     )
 
-    limit = 1.25
+    # Expanded axis limit to give room for labels around the perimeter
+    limit = 1.35
     ax.set_xlim(-limit, limit)
     ax.set_ylim(-limit, limit)
     ax.set_aspect("equal")
