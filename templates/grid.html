@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Modular Operations Reference Grid</h2>
+<form class="controls" method="GET" action="/grid">
+    <label>Modulus (n): 
+        <input type="number" name="modulus" value="{{ modulus }}" min="3" max="100">
+    </label>
+    <label>Operation: 
+        <select name="op">
+            <option value="mult" {% if op == 'mult' %}selected{% endif %}>Multiplication (x * n)</option>
+            <option value="add" {% if op == 'add' %}selected{% endif %}>Addition (x + n)</option>
+            <option value="pow" {% if op == 'pow' %}selected{% endif %}>Exponentiation (x^n)</option>
+            <option value="inv" {% if op == 'inv' %}selected{% endif %}>Modular Inverse (x^-1)</option>
+        </select>
+    </label>
+    <button type="submit">Generate Grid</button>
+    <button type="button" onclick="window.print()">Print Grid</button>
+</form>
+
+<div class="img-container">
+    <img src="/grid_img?modulus={{ modulus }}&op={{ op }}" alt="Modular Operation Grid">
+</div>
+{% endblock %}

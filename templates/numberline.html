@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Modular Base-$n$ Number Line</h2>
+<form class="controls" method="GET" action="/numberline">
+    <label>Modulus (n): 
+        <input type="number" name="modulus" value="{{ modulus }}" min="3" max="300">
+    </label>
+    <label>Concentric Rings: 
+        <input type="number" name="rings" value="{{ rings }}" min="1" max="10">
+    </label>
+    <button type="submit">Update Chart</button>
+    <button type="button" onclick="window.print()">Print Diagram</button>
+</form>
+
+<div class="img-container">
+    <img src="/numberline_img?modulus={{ modulus }}&rings={{ rings }}" alt="Number Line Diagram">
+</div>
+{% endblock %}
