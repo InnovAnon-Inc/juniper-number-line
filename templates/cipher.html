@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Nested Stencil Generator</h2>
+<form class="controls" id="cipherForm" onsubmit="return false;">
+    <label style="flex-grow: 1;">Nested Layers (sides@angle): 
+        <input type="text" id="layersInput" name="layers" value="{{ layers }}" placeholder="e.g. 8@180, 6@90, 4 or 12@180, 8, 6@45">
+    </label>
+    <button type="button" onclick="window.print()">Print Stencil</button>
+</form>
+
+<p style="font-size: 0.85em; color: #AAA; margin-top: -10px;">
+    💡 <strong>Tip:</strong> Append <code>@180</code> to any polygon to rotate/reflect it by 180° (e.g. <code>8@180, 6@0, 4@180</code>). Any custom angle works (e.g., <code>@45</code>, <code>@90</code>).
+</p>
+
+<div class="img-container">
+    <img id="cipherImg" src="" alt="Nested Geometric Stencil">
+</div>
+
+<script>
+    const layersInput = document.getElementById('layersInput');
+    const cipherImg = document.getElementById('cipherImg');
+
+    let debounceTimer;
+
+    function updateCipher() {
+        const layers = layersInput.value || '8@180,6,4';
+        cipherImg.src = `/cipher_img?layers=${encodeURIComponent(layers)}&_t=${new Date().getTime()}`;
+    }
+
+    function queueUpdate() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(updateCipher, 250);
+    }
+
+    window.addEventListener('DOMContentLoaded', updateCipher);
+    layersInput.addEventListener('input', queueUpdate);
+</script>
+{% endblock %}

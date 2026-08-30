@@ -6,7 +6,7 @@
     <title>Modular Arithmetic Visualizer</title>
     <style>
         body { background-color: #0b0b0e; color: #e0e0e0; font-family: sans-serif; margin: 0; padding: 20px; }
-        nav { margin-bottom: 20px; display: flex; gap: 15px; background: #1a1a24; padding: 15px; border-radius: 8px; }
+        nav { margin-bottom: 20px; display: flex; gap: 15px; background: #1a1a24; padding: 15px; border-radius: 8px; flex-wrap: wrap; }
         nav a { color: #00e5ff; text-decoration: none; font-weight: bold; }
         .controls { background: #1a1a24; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         label { display: flex; flex-direction: column; font-size: 0.9em; gap: 5px; }
@@ -14,6 +14,7 @@
         button { background: #00e5ff; color: #000; font-weight: bold; cursor: pointer; border: none; }
         .img-container { text-align: center; }
         img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .data-card { background: #1a1a24; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #FFD700; }
         @media print { nav, .controls { display: none; } body { background: white; color: black; } }
     </style>
 </head>
@@ -21,7 +22,8 @@
     <nav>
         <a href="/">Home</a> | 
         <a href="/numberline">Modular Number Line</a> | 
-        <a href="/grid">Operator Grid Table</a>
+        <a href="/grid">Operator Grid Table</a> | 
+        <a href="/cipher">Sigil & Visual Cipher Stencil</a>
     </nav>
     {% block content %}{% endblock %}
 </body>

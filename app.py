@@ -1,28 +1,27 @@
 import io
 import math
+import string
 
 from flask import Flask, render_template, request, send_file
 import matplotlib
 
-matplotlib.use("Agg")  # Non-gui backend suitable for Flask
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
 app = Flask(__name__)
 
-# --- HELPER MATHEMATICAL FUNCTIONS ---
+# --- HELPER FUNCTIONS ---
 
 
 def get_modular_inverse(a, m):
-    """Returns the modular multiplicative inverse of a mod m, or None if it doesn't exist."""
     try:
         return pow(a, -1, m)
     except ValueError:
-        return None  # No inverse exists if gcd(a, m) != 1
+        return None
 
 
 def calculate_modular_target(x, op, val, modulus):
-    """Calculates target for given operation: target = f(x) % modulus."""
     if op == "mult":
         return (x * val) % modulus
     elif op == "add":
@@ -39,7 +38,6 @@ def calculate_modular_target(x, op, val, modulus):
 
 
 def render_numberline_image(modulus, num_rings):
-    """Renders the standalone Base-n Radial Number Line."""
     fig, ax = plt.subplots(figsize=(10, 10), dpi=200)
     fig.patch.set_facecolor("#121216")
     ax.set_facecolor("#121216")
@@ -53,7 +51,6 @@ def render_numberline_image(modulus, num_rings):
 
     circle_theta = np.linspace(0, 2 * np.pi, 500)
 
-    # Concentric Circles
     for k in range(num_rings + 1):
         r_k = r_inner + k * ring_spacing
         ax.plot(
@@ -64,9 +61,7 @@ def render_numberline_image(modulus, num_rings):
             linestyle="--" if k > 0 else "-",
         )
 
-    # Radial axes & extended labels
     for i, angle in enumerate(angles_shifted):
-        # Long ray outwards
         ax.plot(
             [0, (r_outer_max + 0.2) * np.cos(angle)],
             [0, (r_outer_max + 0.2) * np.sin(angle)],
@@ -74,7 +69,6 @@ def render_numberline_image(modulus, num_rings):
             linewidth=0.8,
         )
 
-        # Label concentric values
         for k in range(num_rings + 1):
             val = i + (k * modulus)
             r_k = r_inner + k * ring_spacing
@@ -117,17 +111,12 @@ def render_numberline_image(modulus, num_rings):
 
 
 def render_grid_diagram(modulus, op, operand_val, ax):
-    """Renders a single modular operation diagram onto an existing Matplotlib Axis with labeled vertices
-
-    and highlights vertices that are their own modular inverses (x^2 ≡ 1 mod m).
-    """
     ax.set_facecolor("#121216")
 
     r_inner = 1.0
     angles = np.linspace(0, 2 * np.pi, modulus, endpoint=False)
     angles_shifted = np.pi / 2 + angles
 
-    # Outer circle
     circle_theta = np.linspace(0, 2 * np.pi, 200)
     ax.plot(
         r_inner * np.cos(circle_theta),
@@ -136,18 +125,16 @@ def render_grid_diagram(modulus, op, operand_val, ax):
         linewidth=1,
     )
 
-    # Pre-calculate self-inverses: x such that (x * x) % modulus == 1
     self_inverses = {
         x for x in range(modulus) if (x * x) % modulus == 1
     }
 
-    # Connect trajectories
     for i in range(modulus):
         if op == "inv":
             target = calculate_modular_target(i, "inv", None, modulus)
             has_inv = get_modular_inverse(i, modulus) is not None
             if not has_inv:
-                continue  # Skip non-invertible elements
+                continue
         else:
             target = calculate_modular_target(i, op, operand_val, modulus)
 
@@ -168,24 +155,18 @@ def render_grid_diagram(modulus, op, operand_val, ax):
             linewidth=1.0,
         )
 
-    # Dynamic label size & radius offset
     label_font_size = max(5, min(9, 120 // modulus))
     r_label = 1.14
 
-    # Modular Vertices & Labels
     for i, angle in enumerate(angles_shifted):
         x_pt = r_inner * np.cos(angle)
         y_pt = r_inner * np.sin(angle)
-
         is_self_inv = i in self_inverses
-
-        # Vertex Dot Styling: Gold highlight for self-inverses, Cyan for others
         dot_color = "#FFD700" if is_self_inv else "#00E5FF"
         dot_size = 18 if is_self_inv else 6
 
         ax.scatter(x_pt, y_pt, color=dot_color, s=dot_size, zorder=4)
 
-        # Extra visual ring around self-inverse vertices
         if is_self_inv:
             ax.scatter(
                 x_pt,
@@ -197,7 +178,6 @@ def render_grid_diagram(modulus, op, operand_val, ax):
                 zorder=4,
             )
 
-        # Draw vertex number labels
         x_lbl = r_label * np.cos(angle)
         y_lbl = r_label * np.sin(angle)
         ax.text(
@@ -212,7 +192,6 @@ def render_grid_diagram(modulus, op, operand_val, ax):
             zorder=5,
         )
 
-    # Title label per sub-diagram
     op_symbols = {
         "mult": f"x \\times {operand_val}",
         "add": f"x + {operand_val}",
@@ -229,6 +208,135 @@ def render_grid_diagram(modulus, op, operand_val, ax):
     ax.set_ylim(-limit, limit)
     ax.set_aspect("equal")
     ax.axis("off")
+
+
+def render_sigil_cipher_image(layers_str):
+    """Renders nested regular polygons/circles with per-layer rotation and reflection options."""
+    fig, ax = plt.subplots(figsize=(10, 10), dpi=200)
+    fig.patch.set_facecolor("#0F0F14")
+    ax.set_facecolor("#0F0F14")
+
+    # Parse polygon layers and optional angles (e.g., "8@180, 6@90, 4")
+    raw_tokens = [x.strip() for x in layers_str.split(",") if x.strip()]
+    parsed_layers = []
+
+    for token in raw_tokens:
+        if "@" in token:
+            parts = token.split("@")
+            try:
+                sides = int(parts[0])
+                angle_deg = float(parts[1])
+            except ValueError:
+                sides, angle_deg = 8, 0.0
+        else:
+            try:
+                sides = int(token)
+                angle_deg = 0.0
+            except ValueError:
+                sides, angle_deg = 8, 0.0
+
+        parsed_layers.append((sides, angle_deg))
+
+    if not parsed_layers:
+        parsed_layers = [(8, 0.0), (6, 0.0), (4, 0.0)]
+
+    num_layers = len(parsed_layers)
+    r_max = 1.0
+    r_step = 0.85 / max(1, num_layers)
+
+    global_vertex_counter = 0
+    circle_theta = np.linspace(0, 2 * np.pi, 300)
+
+    # Render geometry and label vertices
+    for idx, (sides, rotation_deg) in enumerate(parsed_layers):
+        r_layer = r_max - (idx * r_step)
+
+        # Reference circle
+        ax.plot(
+            r_layer * np.cos(circle_theta),
+            r_layer * np.sin(circle_theta),
+            color="#2A2A3D",
+            linewidth=0.8,
+            linestyle=":",
+        )
+
+        if sides <= 0:  # Pure circle layer
+            sides = 12
+
+        # Convert rotation degrees to radians
+        rot_rad = np.radians(rotation_deg)
+
+        # Base angles start at 12 o'clock (pi/2) counterclockwise, plus individual rotation offset
+        angles = (
+            np.pi / 2
+            + rot_rad
+            + np.linspace(0, 2 * np.pi, sides, endpoint=False)
+        )
+
+        # Polygon boundary
+        poly_x = np.append(
+            r_layer * np.cos(angles), r_layer * np.cos(angles[0])
+        )
+        poly_y = np.append(
+            r_layer * np.sin(angles), r_layer * np.sin(angles[0])
+        )
+        ax.plot(poly_x, poly_y, color="#555577", linewidth=1.2, alpha=0.8)
+
+        # Vertices & purely numeric labels
+        for angle in angles:
+            x = r_layer * np.cos(angle)
+            y = r_layer * np.sin(angle)
+
+            ax.scatter(x, y, color="#00E5FF", s=16, zorder=3)
+
+            # Label text format: "0", "1", "2", ...
+            r_lbl = r_layer + 0.05
+            ax.text(
+                r_lbl * np.cos(angle),
+                r_lbl * np.sin(angle),
+                str(global_vertex_counter),
+                color="#A0A0DD",
+                fontsize=8,
+                ha="center",
+                va="center",
+                fontweight="bold",
+            )
+
+            global_vertex_counter += 1
+
+    ax.set_title(
+        "Nested Geometric Stencil", color="#FFFFFF", fontsize=15, pad=15
+    )
+
+    limit = 1.18
+    ax.set_xlim(-limit, limit)
+    ax.set_ylim(-limit, limit)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+    img_buf = io.BytesIO()
+    plt.savefig(
+        img_buf, format="png", facecolor=fig.get_facecolor(), bbox_inches="tight"
+    )
+    plt.close(fig)
+    img_buf.seek(0)
+
+    return img_buf
+
+# --- UPDATED FLASK ROUTES ---
+
+
+@app.route("/cipher_img")
+def cipher_img():
+    layers = request.args.get("layers", "8,6,4")
+    img_buf = render_sigil_cipher_image(layers)
+    return send_file(img_buf, mimetype="image/png")
+
+
+@app.route("/cipher")
+def cipher_page():
+    layers = request.args.get("layers", "8,6,4")
+    return render_template("cipher.html", layers=layers)
 
 # --- FLASK ROUTES ---
 
@@ -288,9 +396,8 @@ def grid_img():
     )
     plt.close(fig)
     img_buf.seek(0)
-
-    # Returning the correct buffer variable name
     return send_file(img_buf, mimetype="image/png")
+
 
 @app.route("/grid")
 def grid_page():
@@ -299,6 +406,7 @@ def grid_page():
     return render_template("grid.html", modulus=modulus, op=op)
 
 
+
+
 if __name__ == "__main__":
-    # Host on 0.0.0.0 so other devices on your local network can connect!
     app.run(host="0.0.0.0", port=5005, debug=True)

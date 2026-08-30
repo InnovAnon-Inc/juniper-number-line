@@ -1,18 +1,40 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Modular Base-$n$ Number Line</h2>
-<form class="controls" method="GET" action="/numberline">
+<form class="controls" id="numberlineForm" onsubmit="return false;">
     <label>Modulus (n): 
-        <input type="number" name="modulus" value="{{ modulus }}" min="3" max="300">
+        <input type="number" id="modulusInput" name="modulus" value="{{ modulus }}" min="3" max="300">
     </label>
     <label>Concentric Rings: 
-        <input type="number" name="rings" value="{{ rings }}" min="1" max="10">
+        <input type="number" id="ringsInput" name="rings" value="{{ rings }}" min="1" max="10">
     </label>
-    <button type="submit">Update Chart</button>
     <button type="button" onclick="window.print()">Print Diagram</button>
 </form>
 
 <div class="img-container">
-    <img src="/numberline_img?modulus={{ modulus }}&rings={{ rings }}" alt="Number Line Diagram">
+    <img id="numberlineImg" src="" alt="Number Line Diagram">
 </div>
+
+<script>
+    const modulusInput = document.getElementById('modulusInput');
+    const ringsInput = document.getElementById('ringsInput');
+    const numberlineImg = document.getElementById('numberlineImg');
+
+    let debounceTimer;
+
+    function updateChart() {
+        const mod = modulusInput.value || 12;
+        const rings = ringsInput.value || 4;
+        numberlineImg.src = `/numberline_img?modulus=${mod}&rings=${rings}&_t=${new Date().getTime()}`;
+    }
+
+    function queueUpdate() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(updateChart, 300);
+    }
+
+    window.addEventListener('DOMContentLoaded', updateChart);
+    modulusInput.addEventListener('input', queueUpdate);
+    ringsInput.addEventListener('input', queueUpdate);
+</script>
 {% endblock %}
