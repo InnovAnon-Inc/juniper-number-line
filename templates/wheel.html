@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Sieve of Sundaram / Prime Wheel Generator</h2>
+<form class="controls" id="wheelForm" onsubmit="return false;">
+    <label>Highest Base Prime: 
+        <div style="display: flex; gap: 5px; align-items: center;">
+            <button type="button" onclick="stepPrime(-1)" style="padding: 6px 12px; font-weight: bold;">◀</button>
+            <input type="number" id="primeInput" name="prime" value="{{ prime }}" readonly style="width: 60px; text-align: center; font-weight: bold; font-size: 1.1em;">
+            <button type="button" onclick="stepPrime(1)" style="padding: 6px 12px; font-weight: bold;">▶</button>
+        </div>
+    </label>
+    <label>Rings: 
+        <input type="number" id="ringsInput" name="rings" value="3" min="1" max="10">
+    </label>
+    <button type="button" id="animBtn" onclick="toggleAnimation()">▶ Run Sieve Animation</button>
+    <button type="button" onclick="window.print()">Print Wheel</button>
+</form>
+
+<div class="img-container">
+    <img id="wheelImg" src="" alt="Prime Wheel Diagram">
+</div>
+
+<script>
+    const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31];
+    
+    const primeInput = document.getElementById('primeInput');
+    const ringsInput = document.getElementById('ringsInput');
+    const wheelImg = document.getElementById('wheelImg');
+    const animBtn = document.getElementById('animBtn');
+
+    let debounceTimer;
+    let animTimer = null;
+    let frame = 0;
+
+    function stepPrime(direction) {
+        let currentPrime = parseInt(primeInput.value) || 5;
+        let idx = PRIMES.indexOf(currentPrime);
+        
+        if (idx === -1) idx = 2; // Default to 5
+        
+        idx = Math.max(0, Math.min(PRIMES.length - 1, idx + direction));
+        primeInput.value = PRIMES[idx];
+        
+        queueUpdate();
+    }
+
+    function updateWheel(isAnimated = false) {
+        const prime = primeInput.value || 5;
+        const rings = ringsInput.value || 3;
+        const frameParam = isAnimated ? frame : 0;
+        wheelImg.src = `/wheel_img?prime=${prime}&rings=${rings}&animate=${isAnimated}&frame=${frameParam}&_t=${new Date().getTime()}`;
+    }
+
+    function queueUpdate() {
+        stopAnimation();
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => updateWheel(false), 250);
+    }
+
+    function toggleAnimation() {
+        if (animTimer) {
+            stopAnimation();
+        } else {
+            frame = 1;
+            animBtn.innerText = '⏹ Stop Animation';
+            updateWheel(true);
+            animTimer = setInterval(() => {
+                frame++;
+                const currentPrime = parseInt(primeInput.value) || 5;
+                const activePrimes = PRIMES.filter(p => p <= currentPrime);
+                if (frame > activePrimes.length) frame = 1;
+                updateWheel(true);
+            }, 1200);
+        }
+    }
+
+    function stopAnimation() {
+        if (animTimer) {
+            clearInterval(animTimer);
+            animTimer = null;
+            animBtn.innerText = '▶ Run Sieve Animation';
+            updateWheel(false);
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => updateWheel(false));
+    ringsInput.addEventListener('input', queueUpdate);
+</script>
+{% endblock %}
